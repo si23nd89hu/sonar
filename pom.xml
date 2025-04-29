@@ -1,0 +1,35 @@
+pipeline {
+    agent any
+
+    tools {
+        sonarQube 'SonarScanner' // Name must match configured scanner
+    }
+
+    environment {
+        SONARQUBE_ENV = 'MySonarQube' // Must match Jenkins config
+    }
+
+    stages {
+        stage('Build') {
+            steps {
+                sh 'mvn clean install'
+            }
+        }
+
+        stage('SonarQube Analysis') {
+            steps {
+                withSonarQubeEnv("${SONARQUBE_ENV}") {
+                    sh 'mvn sonar:sonar'
+                }
+            }
+        }
+
+        stage('Quality Gate') {
+            steps {
+                timeout(time: 1, unit: 'MINUTES') {
+                    waitForQualityGate abortPipeline: true
+                }
+            }
+        }
+    }
+}
